@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react"
 import Link from "next/link"
@@ -38,6 +39,56 @@ type FloatingIconConfig = {
   wobblePhase: number
   rotationRange: number
   rotationSpeed: number
+  infoKey: HeroInfoKey
+}
+
+type HeroInfoKey = "shield" | "lock" | "fingerprint" | "server" | "key"
+
+const heroInfoContent: Record<
+  HeroInfoKey,
+  {
+    title: string
+    description: string
+    highlights: string[]
+    href: string
+    cta: string
+  }
+> = {
+  shield: {
+    title: "Arquitetura de Proteção",
+    description: "Desenhamos camadas de segurança, políticas e controles aderentes ao seu negócio.",
+    highlights: ["Roadmap Zero Trust", "Políticas alinhadas à LGPD", "Monitoramento proativo"],
+    href: "#servicos",
+    cta: "Ver planos de proteção",
+  },
+  lock: {
+    title: "Governança & Compliance",
+    description: "Suporte para frameworks SOC 2, ISO 27001, NIST e programas de auditoria contínua.",
+    highlights: ["Documentação guiada", "Assessment de controles", "Workshops executivos"],
+    href: "#servicos",
+    cta: "Explorar governança",
+  },
+  fingerprint: {
+    title: "Resposta a Incidentes",
+    description: "Playbooks táticos, caça a ameaças e condução de resposta 24/7.",
+    highlights: ["Runbooks dedicados", "Coordenação com CSIRT", "Suporte forense inicial"],
+    href: "#contato",
+    cta: "Solicitar pronto atendimento",
+  },
+  server: {
+    title: "Infraestrutura Segura",
+    description: "Hardening de servidores, cloud e redes com testes de intrusão contínuos.",
+    highlights: ["Pentest recorrente", "Hardening multi-cloud", "Monitoramento de ativos"],
+    href: "#servicos",
+    cta: "Detalhes de infraestrutura",
+  },
+  key: {
+    title: "Treinamento & Cultura",
+    description: "Preparação de equipes, simulações de phishing e capacitação técnica especializada.",
+    highlights: ["Tabletop exercises", "Campanhas anti-phishing", "Mentoria para squads"],
+    href: "#servicos",
+    cta: "Planejar treinamentos",
+  },
 }
 
 const floatingIcons: FloatingIconConfig[] = [
@@ -57,6 +108,7 @@ const floatingIcons: FloatingIconConfig[] = [
     wobblePhase: 0.2,
     rotationRange: 4,
     rotationSpeed: 0.35,
+    infoKey: "shield",
   },
   {
     id: "lock",
@@ -74,6 +126,7 @@ const floatingIcons: FloatingIconConfig[] = [
     wobblePhase: 1,
     rotationRange: 6,
     rotationSpeed: 0.5,
+    infoKey: "lock",
   },
   {
     id: "fingerprint",
@@ -91,6 +144,7 @@ const floatingIcons: FloatingIconConfig[] = [
     wobblePhase: 2.4,
     rotationRange: 8,
     rotationSpeed: 0.3,
+    infoKey: "fingerprint",
   },
   {
     id: "server",
@@ -108,6 +162,7 @@ const floatingIcons: FloatingIconConfig[] = [
     wobblePhase: 3.5,
     rotationRange: 5,
     rotationSpeed: 0.4,
+    infoKey: "server",
   },
   {
     id: "key",
@@ -125,17 +180,27 @@ const floatingIcons: FloatingIconConfig[] = [
     wobblePhase: 4.2,
     rotationRange: 7,
     rotationSpeed: 0.55,
+    infoKey: "key",
   },
 ]
 
 export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null)
+  const iconRefs = useRef<Record<HeroInfoKey, HTMLDivElement | null>>({
+    shield: null,
+    lock: null,
+    fingerprint: null,
+    server: null,
+    key: null,
+  })
   const targetRef = useRef({ x: 50, y: 50 })
   const animationFrameRef = useRef<number>()
   const timeRef = useRef(0)
+  const infoTimeoutRef = useRef<number>()
   const [cursorPosition, setCursorPosition] = useState({ x: 50, y: 50 })
   const [isPointerActive, setIsPointerActive] = useState(false)
   const [heroSize, setHeroSize] = useState({ width: 0, height: 0 })
+  const [activeInfo, setActiveInfo] = useState<HeroInfoKey | null>(null)
 
   const handleMouseMove = useCallback((event: ReactMouseEvent<HTMLElement>) => {
     if (!heroRef.current) return
@@ -157,6 +222,26 @@ export function Hero() {
   const handleMouseLeave = useCallback(() => {
     setIsPointerActive(false)
     targetRef.current = { x: 50, y: 50 }
+  }, [])
+
+  const handleIconInfo = useCallback((infoKey: HeroInfoKey) => {
+    setActiveInfo((current) => {
+      const next = current === infoKey ? null : infoKey
+      if (infoTimeoutRef.current) {
+        window.clearTimeout(infoTimeoutRef.current)
+      }
+      if (next) {
+        infoTimeoutRef.current = window.setTimeout(() => setActiveInfo(null), 7000)
+      }
+      return next
+    })
+  }, [])
+
+  const handleInfoClose = useCallback(() => {
+    setActiveInfo(null)
+    if (infoTimeoutRef.current) {
+      window.clearTimeout(infoTimeoutRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -196,8 +281,27 @@ export function Hero() {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
+      if (infoTimeoutRef.current) {
+        window.clearTimeout(infoTimeoutRef.current)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (!activeInfo) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const activeNode = iconRefs.current[activeInfo]
+      if (activeNode && !activeNode.contains(event.target as Node)) {
+        setActiveInfo(null)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown)
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown)
+    }
+  }, [activeInfo])
 
   const percentToPxX = heroSize.width / 100 || 0
   const percentToPxY = heroSize.height / 100 || 0
@@ -235,24 +339,84 @@ export function Hero() {
           const totalOffsetY = parallaxY + attractionY + wobbleY
           const rotation = Math.sin(time * iconConfig.rotationSpeed + iconConfig.wobblePhase) * iconConfig.rotationRange
           const scale = 1 + pullProgress * 0.12
+          const isActive = activeInfo === iconConfig.infoKey
+
+          const style: CSSProperties = {
+            top: `calc(${baseY}% + ${totalOffsetY}px)`,
+            left: `calc(${baseX}% + ${totalOffsetX}px)`,
+            backgroundColor: isActive ? "rgba(7, 11, 26, 0.92)" : iconConfig.background,
+            borderColor: iconConfig.border,
+            color: isActive ? "var(--foreground)" : iconConfig.color,
+            transform: isActive
+              ? "translate(-50%, -50%)"
+              : `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`,
+          }
+
+          if (!isActive) {
+            style.width = iconConfig.size
+            style.height = iconConfig.size
+          } else {
+            style.width = "min(22rem, calc(100vw - 3rem))"
+            style.minWidth = "16rem"
+            style.minHeight = "11rem"
+            style.padding = "1.5rem"
+          }
 
           return (
             <div
               key={iconConfig.id}
-              className={`hero-floating-icon${isPointerActive ? " hero-floating-icon--active" : ""}`}
-              style={{
-                top: `calc(${baseY}% + ${totalOffsetY}px)`,
-                left: `calc(${baseX}% + ${totalOffsetX}px)`,
-                width: iconConfig.size,
-                height: iconConfig.size,
-                backgroundColor: iconConfig.background,
-                borderColor: iconConfig.border,
-                color: iconConfig.color,
-                transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`,
+              className={`hero-floating-icon${isPointerActive ? " hero-floating-icon--active" : ""}${
+                isActive ? " hero-floating-icon--expanded" : ""
+              }`}
+              style={style}
+              ref={(node) => {
+                iconRefs.current[iconConfig.infoKey] = node
               }}
-              aria-hidden
+              role="button"
+              tabIndex={0}
+              aria-expanded={isActive}
+              aria-label={`Saiba mais sobre ${heroInfoContent[iconConfig.infoKey].title}`}
+              onClick={() => handleIconInfo(iconConfig.infoKey)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  handleIconInfo(iconConfig.infoKey)
+                }
+              }}
             >
-              <IconComponent className="w-1/2 h-1/2" />
+              {isActive ? (
+                <div className="hero-floating-icon__card">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-primary/80 mb-1">
+                    Serviço em destaque
+                  </p>
+                  <h4 className="text-lg font-semibold text-foreground mb-1">
+                    {heroInfoContent[iconConfig.infoKey].title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {heroInfoContent[iconConfig.infoKey].description}
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1.5 mb-4">
+                    {heroInfoContent[iconConfig.infoKey].highlights.map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button size="sm" variant="secondary" asChild>
+                    <Link
+                      href={heroInfoContent[iconConfig.infoKey].href}
+                      onClick={() => {
+                        handleInfoClose()
+                      }}
+                    >
+                      {heroInfoContent[iconConfig.infoKey].cta}
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <IconComponent className="w-1/2 h-1/2" />
+              )}
             </div>
           )
         })}

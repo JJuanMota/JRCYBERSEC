@@ -100,9 +100,10 @@
     border-style: solid;
     backdrop-filter: blur(8px);
     mix-blend-mode: screen;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
-    transition: box-shadow 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+    transition: box-shadow 0.4s ease, opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
     will-change: transform;
     opacity: 0.85;
   }
@@ -113,8 +114,51 @@
     opacity: 1;
   }
 
+  .hero-floating-icon--expanded {
+    align-items: flex-start;
+    cursor: default;
+    mix-blend-mode: normal;
+    box-shadow: 0 50px 140px rgba(7, 11, 26, 0.8);
+    opacity: 1;
+  }
+
   .hero-floating-icon svg {
     width: 55%;
     height: 55%;
+  }
+
+  .hero-floating-icon__card {
+    width: 100%;
+    animation: hero-floating-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .hero-floating-icon__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.9rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    transition: color 0.2s ease;
+  }
+
+  .hero-floating-icon__close:hover {
+    color: var(--foreground);
+  }
+
+  @keyframes hero-floating-card-in {
+    0% {
+      opacity: 0;
+      transform: translateY(16px) scale(0.97);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.01);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 }
