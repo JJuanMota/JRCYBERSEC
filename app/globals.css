@@ -88,3 +88,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .hero-floating-icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border-width: 1px;
+    border-style: solid;
+    backdrop-filter: blur(8px);
+    mix-blend-mode: screen;
+    pointer-events: none;
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+    transition: box-shadow 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+    will-change: transform;
+    opacity: 0.85;
+  }
+
+  .hero-floating-icon--active {
+    box-shadow: 0 40px 110px rgba(15, 23, 42, 0.55);
+    filter: brightness(1.08);
+    opacity: 1;
+  }
+
+  .hero-floating-icon svg {
+    width: 55%;
+    height: 55%;
+  }
+}
